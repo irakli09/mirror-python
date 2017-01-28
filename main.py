@@ -1,3 +1,4 @@
+import os
 import time
 import requests
 import cv2
@@ -7,11 +8,26 @@ faceCascade = cv2.CascadeClassifier('cascade.xml')
 
 cam = cv2.VideoCapture(0)
 counter = 0
+countdown = False
+imageName = None
 while True:
     s, img = cam.read()
     if s:  # frame captured without any errors
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+        if countdown:
+            countdown = False
+            imageName = 'images/' + str(time.time()) + '.png'
+            cv2.imwrite(imageName, img)  # save image
+            file = open(imageName,'rb')
+            files = {'files': file}
+            r = requests.post(settings.POST_URL,files=files,data={'device': settings.DEVICE})
+            file.close()
+            os.remove(imageName)
+            print(r.text)
+            print(r.status_code)
+            counter = 0
+            continue
         faces = faceCascade.detectMultiScale(
             gray,
             scaleFactor=1.1,
@@ -27,17 +43,15 @@ while True:
             counter += 1
             if counter > 10:
                 timer = 3
-                while timer > 0:
-                    print('Capture in ' + str(timer))
-                    timer -= 1
-                    time.sleep(1)
-                cv2.imwrite('images/' + str(time.time()) + '.png', img)  # save image
-                files = {'file': ('images/' + str(time.time()) + '.png', settings.DEVICE)}
-                r = requests.post(settings.POST_URL,files=files)
-                print(r.text)
-                print(r.status_code)
+                if not countdown:
+                    while timer > 0:
+                        print('Capture in ' + str(timer))
+                        timer -= 1
+                        time.sleep(1)
+                    countdown = True
+
                 # cv2.imshow("Faces found", img)
                 # cv2.waitKey(0)
-                counter = 0
         else:
             counter = 0
+
