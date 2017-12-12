@@ -1,2 +1,2 @@
-POST_URL = 'http://mirror.dev/upload/index'
+POST_URL = 'http://mirror.test/upload/index'
 DEVICE = 'home'
